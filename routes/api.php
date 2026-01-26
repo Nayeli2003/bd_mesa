@@ -19,4 +19,15 @@ Route::middleware(['auth:sanctum', 'role:tecnico'])->get('/tecnico', function ()
 Route::middleware(['auth:sanctum', 'role:sucursal'])->get('/sucursal', function () {
     return response()->json(['ok' => 'sucursal']);
 });
+
+//========Parte de tickets===============//
+
+// Tickets
+Route::get('/tickets', [TicketController::class, 'index']);
+
+// Sucursal crea ticket
+Route::middleware('role:sucursal')->post('/tickets', [TicketController::class, 'store']);
+
+// Técnico resuelve ticket
+Route::middleware('role:tecnico')->post('/tickets/{id}/resolver', [TicketController::class, 'resolver']);
     
