@@ -1,6 +1,8 @@
 <?php
 use App\Http\Controllers\AuthController;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\TicketController;
+
 
 Route::post('/login', [AuthController::class, 'login']);
 
@@ -21,6 +23,10 @@ Route::middleware(['auth:sanctum', 'role:sucursal'])->get('/sucursal', function 
 });
 
 //========Parte de tickets===============//
+
+Route::middleware(['auth:sanctum','role:tecnico'])
+    ->get('/mis-tickets', [TicketController::class, 'misTickets']);
+
 
 // Tickets
 Route::get('/tickets', [TicketController::class, 'index']);

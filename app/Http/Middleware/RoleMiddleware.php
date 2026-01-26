@@ -10,10 +10,25 @@ class RoleMiddleware
     public function handle(Request $request, Closure $next, ...$roles)
     {
         $user = $request->user();
-        $rolNombre = strtolower($user->rol?->nombre_rol ?? '');
 
-        if (!in_array($rolNombre, array_map('strtolower', $roles))) {
-            return response()->json(['message' => 'No autorizado'], 403);
+        if (!$user) {
+            return response()->json(['message' => 'No autenticado'], 401);
+        }
+
+        // Asegurar que venga la relación rol (por si no venía cargada)
+        if (!$user->relationLoaded('rol')) {
+            $user->load('rol');
+        }
+
+        $rolNombre = strtolower($user->rol?->nombre_rol ?? '');
+        $rolesPermitidos = array_map(fn($r) => strtolower(trim($r)), $roles);
+
+        if (!in_array($rolNombre, $rolesPermitidos, true)) {
+            return response()->json([
+                'message' => 'No autorizado',
+                'tu_rol' => $rolNombre,
+                'roles_permitidos' => $rolesPermitidos
+            ], 403);
         }
 
         return $next($request);
