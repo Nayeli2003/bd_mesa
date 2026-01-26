@@ -106,4 +106,29 @@ class TicketController extends Controller
             'tiempo_resolucion_minutos' => $minutos,
         ]);
     }
+
+    public function misTickets(Request $request)
+{
+    $tecnico = $request->user();
+
+    $tickets = DB::table('ticket')
+        ->join('estado_ticket', 'ticket.id_estado', '=', 'estado_ticket.id_estado')
+        ->join('prioridad', 'ticket.id_prioridad', '=', 'prioridad.id_prioridad')
+        ->join('sucursal', 'ticket.id_sucursal', '=', 'sucursal.id_sucursal')
+        ->leftJoin('tipo_problema', 'ticket.id_problema', '=', 'tipo_problema.id_problema')
+        ->select(
+            'ticket.*',
+            'estado_ticket.nombre as estado',
+            'prioridad.nombre as prioridad',
+            'prioridad.color as prioridad_color',
+            'sucursal.nombre as sucursal',
+            'tipo_problema.nombre as tipo_problema'
+        )
+        ->where('ticket.id_tecnico', $tecnico->id_usuario)   //esto es solo para sus tickets
+        ->orderByDesc('ticket.fecha_creacion')
+        ->get();
+
+    return $tickets;
+}
+
 }

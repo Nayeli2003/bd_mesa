@@ -30,4 +30,5 @@ Route::middleware('role:sucursal')->post('/tickets', [TicketController::class, '
 
 // Técnico resuelve ticket
 Route::middleware('role:tecnico')->post('/tickets/{id}/resolver', [TicketController::class, 'resolver']);
-    
+
+Route::middleware('role:tecnico')->get('/mis-tickets', [TicketController::class, 'misTickets']);
