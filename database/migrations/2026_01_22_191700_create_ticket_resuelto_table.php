@@ -14,11 +14,11 @@ return new class extends Migration
         Schema::create('ticket_resuelto', function (Blueprint $table) {
             $table->bigIncrements('id_ticket_resuelto');
             $table->unsignedBigInteger('id_ticket');
-            $table->unsignedBigInteger('id_usuario');
+            $table->unsignedBigInteger('id_usuario'); //tecnico
             $table->timestamp('fecha_resolucion')->useCurrent();
             $table->text('solucion');
-            $table->text('observaciones');
-            $table->time('descripcion');
+            $table->text('observaciones')->nullable();
+            $table->time('tiempo_resolucion');//hora y minutos
 
             $table->foreign('id_ticket')->references('id_ticket')->on('ticket')
             ->onUpdate('cascade')->onDelete('restrict');

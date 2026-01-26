@@ -18,6 +18,8 @@ return new class extends Migration
         $table->unsignedBigInteger('id_estado');
         $table->unsignedBigInteger('id_usuario');
         $table->unsignedBigInteger('id_prioridad');
+        $table->unsignedBigInteger('id_tipo_problema');
+
 
         $table->string('titulo', 200);
         $table->text('descripcion');
@@ -34,6 +36,9 @@ return new class extends Migration
             ->onUpdate('cascade')->onDelete('restrict');
 
         $table->foreign('id_prioridad')->references('id_prioridad')->on('prioridad')
+            ->onUpdate('cascade')->onDelete('restrict');
+
+        $table->foreign('id_tipo_problema')->references('id_tipo_problema')->on('tipo_problema')
             ->onUpdate('cascade')->onDelete('restrict');
     });
     }
