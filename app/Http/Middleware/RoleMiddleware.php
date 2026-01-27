@@ -15,7 +15,7 @@ class RoleMiddleware
             return response()->json(['message' => 'No autenticado'], 401);
         }
 
-        // Asegurar que venga la relación rol (por si no venía cargada)
+        // la relación de rol
         if (!$user->relationLoaded('rol')) {
             $user->load('rol');
         }
