@@ -4,13 +4,11 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\TicketController;
 
-/**
- * Público
- */
+
 Route::post('/login', [AuthController::class, 'login']);
 
 /**
- * Protegido (requiere token Sanctum)
+ * se protege se requiere en token
  */
 Route::middleware('auth:sanctum')->group(function () {
 
