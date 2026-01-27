@@ -1,7 +1,6 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-use Illuminate\Http\Request;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\TicketController;
 
@@ -19,27 +18,27 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/me', [AuthController::class, 'me']);
     Route::post('/logout', [AuthController::class, 'logout']);
 
-    /**
-     * Test rápido por rol (útil para debug)
-     */
+    // roles
     Route::middleware('role:admin')->get('/admin', fn () => response()->json(['ok' => 'admin']));
     Route::middleware('role:tecnico')->get('/tecnico', fn () => response()->json(['ok' => 'tecnico']));
     Route::middleware('role:sucursal')->get('/sucursal', fn () => response()->json(['ok' => 'sucursal']));
 
-    /**
-     * Tickets (todos autenticados)
-     */
+    // Tickets (todos autenticados)
     Route::get('/tickets', [TicketController::class, 'index']);
 
-    // Sucursal crea ticket
-    Route::middleware('role:sucursal')
-        ->post('/tickets', [TicketController::class, 'store']);
+    // Sucursal
+    Route::middleware('role:sucursal')->group(function () {
+        Route::post('/tickets', [TicketController::class, 'store']);
+    });
 
-    // Técnico resuelve ticket
-    Route::middleware('role:tecnico')
-        ->post('/tickets/{id}/resolver', [TicketController::class, 'resolver']);
+    // Técnico
+    Route::middleware('role:tecnico')->group(function () {
+        Route::get('/mis-tickets', [TicketController::class, 'misTickets']);
+        Route::post('/tickets/{id}/resolver', [TicketController::class, 'resolver']);
+    });
 
-    // Técnico ve sus tickets
-    Route::middleware('role:tecnico')
-        ->get('/mis-tickets', [TicketController::class, 'misTickets']);
+    // Admin
+    Route::middleware('role:admin')->group(function () {
+        Route::post('/tickets/{id}/asignar', [TicketController::class, 'asignarTecnico']);
+    });
 });

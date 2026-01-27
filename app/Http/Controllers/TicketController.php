@@ -43,6 +43,7 @@ class TicketController extends Controller
 
     /**
      * 2) Crear ticket (solo sucursal)
+     * - Asignación automática de técnico
      */
     public function store(Request $request)
     {
@@ -56,8 +57,8 @@ class TicketController extends Controller
         $request->validate([
             'titulo' => 'required|string|max:200',
             'descripcion' => 'required|string',
-            'id_prioridad' => 'required|integer',
-            'id_tipo_problema' => 'required|integer',
+            'id_prioridad' => 'required|integer|exists:prioridad,id_prioridad',
+            'id_tipo_problema' => 'required|integer|exists:tipo_problema,id_tipo_problema',
         ]);
 
         // Buscar estado "Abierto"
@@ -66,26 +67,41 @@ class TicketController extends Controller
             return response()->json(['message' => 'Error: El estado "Abierto" no existe en la DB'], 500);
         }
 
+        // Técnico automático (menos carga de tickets activos)
+        $tecnico = $this->seleccionarTecnicoAutomatico();
+        if (!$tecnico) {
+            return response()->json(['message' => 'No hay técnicos disponibles para asignación automática'], 422);
+        }
+
+        // (Opcional) Si existe estado "En proceso", úsalo cuando se asigna
+        $estadoProceso = DB::table('estado_ticket')
+            ->whereRaw("LOWER(nombre) IN ('en proceso','proceso')")
+            ->first();
+
+        $idEstadoInicial = $estadoProceso ? $estadoProceso->id_estado : $estadoAbierto->id_estado;
+
         $idTicket = DB::table('ticket')->insertGetId([
             'id_sucursal' => $user->id_sucursal,
-            'id_estado' => $estadoAbierto->id_estado,
+            'id_estado' => $idEstadoInicial,
             'id_usuario' => $user->id_usuario,
             'id_prioridad' => $request->id_prioridad,
             'id_tipo_problema' => $request->id_tipo_problema,
+            'id_tecnico' => $tecnico->id_usuario, // asignación automática
             'titulo' => $request->titulo,
             'descripcion' => $request->descripcion,
             'fecha_creacion' => now(),
         ], 'id_ticket');
 
         return response()->json([
-            'message' => 'Ticket creado',
-            'id_ticket' => $idTicket
+            'message' => 'Ticket creado y asignado automáticamente',
+            'id_ticket' => $idTicket,
+            'id_tecnico' => (int)$tecnico->id_usuario
         ], 201);
     }
 
     /**
      * 3) Resolver / actualizar estado ticket (solo técnico)
-     * - Si el estado elegido es "Cerrado", crea/actualiza en ticket_resuelto con tiempo de resolución.
+     * - Si el estado elegido es "Cerrado", guarda en ticket_resuelto
      */
     public function resolver(Request $request, $id)
     {
@@ -97,7 +113,7 @@ class TicketController extends Controller
         }
 
         $request->validate([
-            'id_estado' => 'required|integer',
+            'id_estado' => 'required|integer|exists:estado_ticket,id_estado',
             'solucion' => 'nullable|string',
             'observaciones' => 'nullable|string',
         ]);
@@ -105,6 +121,11 @@ class TicketController extends Controller
         $ticket = DB::table('ticket')->where('id_ticket', $id)->first();
         if (!$ticket) {
             return response()->json(['message' => 'Ticket no encontrado'], 404);
+        }
+
+        // Seguridad: que solo resuelva los asignados
+        if ((int)($ticket->id_tecnico ?? 0) !== (int)$tecnico->id_usuario) {
+            return response()->json(['message' => 'No puedes resolver un ticket que no está asignado a ti'], 403);
         }
 
         // Buscar estado "Cerrado"
@@ -133,8 +154,6 @@ class TicketController extends Controller
         DB::table('ticket')->where('id_ticket', $id)->update([
             'id_estado' => $request->id_estado,
             'comentarios' => $request->observaciones,
-            // Opcional: si tú asignas el técnico aquí, descomenta:
-            // 'id_tecnico' => $tecnico->id_usuario,
         ]);
 
         return response()->json(['message' => 'Estado del ticket actualizado']);
@@ -171,5 +190,89 @@ class TicketController extends Controller
             ->get();
 
         return $tickets;
+    }
+
+    /**
+     * 5) Asignación manual por admin (reasignación)
+     * POST /tickets/{id}/asignar  body: { "id_tecnico": 2 }
+     */
+    public function asignarTecnico(Request $request, $id)
+    {
+        $admin = $request->user();
+        $rol = strtolower($admin->rol?->nombre_rol ?? '');
+
+        if ($rol !== 'admin') {
+            return response()->json(['message' => 'No autorizado (solo admin)'], 403);
+        }
+
+        $request->validate([
+            'id_tecnico' => 'required|integer',
+        ]);
+
+        $ticket = DB::table('ticket')->where('id_ticket', $id)->first();
+        if (!$ticket) {
+            return response()->json(['message' => 'Ticket no encontrado'], 404);
+        }
+
+        // Validar que el usuario existe y es técnico
+        $tecnico = DB::table('usuario as u')
+            ->join('rol as r', 'u.id_rol', '=', 'r.id_rol')
+            ->where('u.id_usuario', $request->id_tecnico)
+            ->whereRaw("LOWER(r.nombre_rol) = 'tecnico'")
+            ->select('u.id_usuario')
+            ->first();
+
+        if (!$tecnico) {
+            return response()->json(['message' => 'El usuario no es técnico o no existe'], 422);
+        }
+
+        // (Opcional) si existe "En proceso", ponlo al asignar
+        $estadoProceso = DB::table('estado_ticket')
+            ->whereRaw("LOWER(nombre) IN ('en proceso','proceso')")
+            ->first();
+
+        $dataUpdate = [
+            'id_tecnico' => (int)$request->id_tecnico,
+        ];
+
+        if ($estadoProceso) {
+            $dataUpdate['id_estado'] = $estadoProceso->id_estado;
+        }
+
+        DB::table('ticket')->where('id_ticket', $id)->update($dataUpdate);
+
+        return response()->json([
+            'message' => 'Técnico asignado correctamente',
+            'id_ticket' => (int)$id,
+            'id_tecnico' => (int)$request->id_tecnico
+        ]);
+    }
+
+    /**
+     * Selecciona técnico automático por menor carga de tickets activos
+     */
+    private function seleccionarTecnicoAutomatico(): ?object
+    {
+        $estadosActivos = DB::table('estado_ticket')
+            ->whereIn(DB::raw('LOWER(nombre)'), ['abierto', 'en proceso', 'proceso'])
+            ->pluck('id_estado')
+            ->toArray();
+
+        $tecnico = DB::table('usuario as u')
+            ->join('rol as r', 'u.id_rol', '=', 'r.id_rol')
+            ->leftJoin('ticket as t', function ($join) use ($estadosActivos) {
+                $join->on('u.id_usuario', '=', 't.id_tecnico');
+                if (!empty($estadosActivos)) {
+                    $join->whereIn('t.id_estado', $estadosActivos);
+                }
+            })
+            ->whereRaw("LOWER(r.nombre_rol) = 'tecnico'")
+            ->select('u.id_usuario', DB::raw('COUNT(t.id_ticket) as carga'))
+            ->groupBy('u.id_usuario')
+            ->orderBy('carga', 'asc')
+            ->orderBy('u.id_usuario', 'asc')
+            ->first();
+
+        return $tecnico; // { id_usuario, carga } o null
     }
 }
