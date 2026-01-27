@@ -22,7 +22,7 @@ class TicketController extends Controller
             ->join('estado_ticket', 'ticket.id_estado', '=', 'estado_ticket.id_estado')
             ->join('prioridad', 'ticket.id_prioridad', '=', 'prioridad.id_prioridad')
             ->join('sucursal', 'ticket.id_sucursal', '=', 'sucursal.id_sucursal')
-            ->leftJoin('tipo_problema', 'ticket.id_problema', '=', 'tipo_problema.id_problema')
+            ->leftJoin('tipo_problema', 'ticket.id_tipo_problema', '=', 'tipo_problema.id_tipo_problema')
             ->select(
                 'ticket.*',
                 'estado_ticket.nombre as estado',
@@ -57,7 +57,7 @@ class TicketController extends Controller
             'titulo' => 'required|string|max:200',
             'descripcion' => 'required|string',
             'id_prioridad' => 'required|integer',
-            'id_problema' => 'required|integer',
+            'id_tipo_problema' => 'required|integer',
         ]);
 
         // Buscar estado "Abierto"
@@ -71,7 +71,7 @@ class TicketController extends Controller
             'id_estado' => $estadoAbierto->id_estado,
             'id_usuario' => $user->id_usuario,
             'id_prioridad' => $request->id_prioridad,
-            'id_problema' => $request->id_problema,
+            'id_tipo_problema' => $request->id_tipo_problema,
             'titulo' => $request->titulo,
             'descripcion' => $request->descripcion,
             'fecha_creacion' => now(),
@@ -157,7 +157,7 @@ class TicketController extends Controller
             ->join('estado_ticket', 'ticket.id_estado', '=', 'estado_ticket.id_estado')
             ->join('prioridad', 'ticket.id_prioridad', '=', 'prioridad.id_prioridad')
             ->join('sucursal', 'ticket.id_sucursal', '=', 'sucursal.id_sucursal')
-            ->leftJoin('tipo_problema', 'ticket.id_problema', '=', 'tipo_problema.id_problema')
+            ->leftJoin('tipo_problema', 'ticket.id_tipo_problema', '=', 'tipo_problema.id_tipo_problema')
             ->select(
                 'ticket.*',
                 'estado_ticket.nombre as estado',

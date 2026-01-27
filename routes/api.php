@@ -1,40 +1,45 @@
 <?php
-use App\Http\Controllers\AuthController;
+
 use Illuminate\Support\Facades\Route;
+use Illuminate\Http\Request;
+use App\Http\Controllers\AuthController;
 use App\Http\Controllers\TicketController;
 
-
+/**
+ * Público
+ */
 Route::post('/login', [AuthController::class, 'login']);
 
+/**
+ * Protegido (requiere token Sanctum)
+ */
 Route::middleware('auth:sanctum')->group(function () {
+
+    // Auth
     Route::get('/me', [AuthController::class, 'me']);
     Route::post('/logout', [AuthController::class, 'logout']);
+
+    /**
+     * Test rápido por rol (útil para debug)
+     */
+    Route::middleware('role:admin')->get('/admin', fn () => response()->json(['ok' => 'admin']));
+    Route::middleware('role:tecnico')->get('/tecnico', fn () => response()->json(['ok' => 'tecnico']));
+    Route::middleware('role:sucursal')->get('/sucursal', fn () => response()->json(['ok' => 'sucursal']));
+
+    /**
+     * Tickets (todos autenticados)
+     */
+    Route::get('/tickets', [TicketController::class, 'index']);
+
+    // Sucursal crea ticket
+    Route::middleware('role:sucursal')
+        ->post('/tickets', [TicketController::class, 'store']);
+
+    // Técnico resuelve ticket
+    Route::middleware('role:tecnico')
+        ->post('/tickets/{id}/resolver', [TicketController::class, 'resolver']);
+
+    // Técnico ve sus tickets
+    Route::middleware('role:tecnico')
+        ->get('/mis-tickets', [TicketController::class, 'misTickets']);
 });
-Route::middleware(['auth:sanctum', 'role:admin'])->get('/admin', function () {
-    return response()->json(['ok' => 'admin']);
-});
-
-Route::middleware(['auth:sanctum', 'role:tecnico'])->get('/tecnico', function () {
-    return response()->json(['ok' => 'tecnico']);
-});
-
-Route::middleware(['auth:sanctum', 'role:sucursal'])->get('/sucursal', function () {
-    return response()->json(['ok' => 'sucursal']);
-});
-
-//========Parte de tickets===============//
-
-Route::middleware(['auth:sanctum','role:tecnico'])
-    ->get('/mis-tickets', [TicketController::class, 'misTickets']);
-
-
-// Tickets
-Route::get('/tickets', [TicketController::class, 'index']);
-
-// Sucursal crea ticket
-Route::middleware('role:sucursal')->post('/tickets', [TicketController::class, 'store']);
-
-// Técnico resuelve ticket
-Route::middleware('role:tecnico')->post('/tickets/{id}/resolver', [TicketController::class, 'resolver']);
-
-Route::middleware('role:tecnico')->get('/mis-tickets', [TicketController::class, 'misTickets']);

@@ -10,10 +10,10 @@ class User extends Authenticatable
 {
     use HasApiTokens, Notifiable;
 
-    // Tu tabla real (según tu diagrama)
+    // tabla
     protected $table = 'usuario';
 
-    // Tu PK real
+    // la PK
     protected $primaryKey = 'id_usuario';
 
     // Si NO tienes created_at / updated_at en esa tabla
