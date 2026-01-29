@@ -44,6 +44,7 @@ class TicketController extends Controller
     /**
      * 2) Crear ticket (solo sucursal)
      * - Asignación automática de técnico
+     * - Agregar que se asigne la prioridad automáticamente 
      */
     public function store(Request $request)
     {
@@ -102,6 +103,7 @@ class TicketController extends Controller
     /**
      * 3) Resolver / actualizar estado ticket (solo técnico)
      * - Si el estado elegido es "Cerrado", guarda en ticket_resuelto
+     * - Agregar que se genere el pdf.
      */
     public function resolver(Request $request, $id)
     {
@@ -194,7 +196,8 @@ class TicketController extends Controller
 
     /**
      * 5) Asignación manual por admin (reasignación)
-     * POST /tickets/{id}/asignar  body: { "id_tecnico": 2 }
+     * POST /tickets/{id}/asignar  body: { "id_tecnico": 2 } ejemplo
+     * - que tambien pueda descargar pdf (urgente)
      */
     public function asignarTecnico(Request $request, $id)
     {
@@ -226,7 +229,7 @@ class TicketController extends Controller
             return response()->json(['message' => 'El usuario no es técnico o no existe'], 422);
         }
 
-        // (Opcional) si existe "En proceso", ponlo al asignar
+        // (Opcional) si existe "En proceso", se pone al asignar
         $estadoProceso = DB::table('estado_ticket')
             ->whereRaw("LOWER(nombre) IN ('en proceso','proceso')")
             ->first();
@@ -273,6 +276,6 @@ class TicketController extends Controller
             ->orderBy('u.id_usuario', 'asc')
             ->first();
 
-        return $tecnico; // { id_usuario, carga } o null
+        return $tecnico; // { id_usuario, carga } o null depende
     }
 }
