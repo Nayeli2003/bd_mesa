@@ -5,6 +5,8 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\TicketController;
 use App\Http\Controllers\UserController;
 
+
+
 Route::post('/login', [AuthController::class, 'login']);
 
 /**

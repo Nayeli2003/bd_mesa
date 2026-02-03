@@ -6,31 +6,41 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 
+
 class User extends Authenticatable
 {
     use HasApiTokens, Notifiable;
 
-    // tabla
+    // Nombre de la tabla real
     protected $table = 'usuario';
 
-    // la PK
+    // PK personalizada
     protected $primaryKey = 'id_usuario';
 
-    // Si NO tienes created_at / updated_at en esa tabla
+    // No tienes created_at / updated_at
     public $timestamps = false;
 
+    // Campos permitidos para asignación masiva
     protected $fillable = [
+        'nombre',
         'username',
         'password',
-        'id_sucursal',
         'id_rol',
+        'id_sucursal',
+        'activo',
     ];
 
+    // Ocultar password en respuestas JSON
     protected $hidden = [
         'password',
     ];
 
-    // Para que Laravel use "username" en vez de "email"
+    // Casts (útil para que activo sea boolean)
+    protected $casts = [
+        'activo' => 'boolean',
+    ];
+
+    // Para que Laravel autentique con "username" en vez de "email"
     public function getAuthIdentifierName()
     {
         return 'username';

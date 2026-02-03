@@ -10,11 +10,19 @@ class Sucursal extends Model
     protected $primaryKey = 'id_sucursal';
     public $timestamps = false;
 
-    public $incrementing = false; //IMPORTANTE PARA QUE NO LO HAGA AUTOMATICAMENTE
+    // IMPORTANTE: el id NO es autoincrement
+    public $incrementing = false;
     protected $keyType = 'int';
 
+    // 👉 ESTO ES LO QUE FALTABA
+    protected $fillable = [
+        'id_sucursal',
+        'nombre',
+    ];
+
+    // Relación con usuarios (opcional, pero bien)
     public function usuarios()
     {
-        return $this->hasMany(User::class, 'id_sucursal', 'id_sucursal');
+        return $this->hasMany(\App\Models\User::class, 'id_sucursal', 'id_sucursal');
     }
 }

@@ -6,32 +6,26 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
     public function up(): void
     {
-    Schema::create('usuario', function (Blueprint $table) {
-        $table->bigIncrements('id_usuario');
+        Schema::create('usuario', function (Blueprint $table) {
+            $table->bigIncrements('id_usuario');
 
-        $table->string('username', 80)->unique();
-        $table->string('password'); // aquí se guarda el hash bcrypt :)
+            $table->string('nombre', 120); // ✅ para mostrar en UI
+            $table->string('username', 80)->unique();
+            $table->string('password');
 
-        $table->unsignedBigInteger('id_rol');
-         $table->foreign('id_rol')->references('id_rol')->on('rol');
-        $table->unsignedBigInteger('id_sucursal');
-        $table->foreign('id_sucursal')->references('id_sucursal')->on('sucursal');
+            $table->unsignedBigInteger('id_rol');
+            $table->foreign('id_rol')->references('id_rol')->on('rol');
 
+            // ✅ nullable porque admin/tecnico no tienen sucursal
+            $table->unsignedBigInteger('id_sucursal')->nullable();
+            $table->foreign('id_sucursal')->references('id_sucursal')->on('sucursal');
 
-       
-        
-    });
+            $table->boolean('activo')->default(true); // ✅ activar/desactivar
+        });
     }
 
-
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
         Schema::dropIfExists('usuario');

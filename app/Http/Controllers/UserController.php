@@ -21,27 +21,33 @@ class UserController extends Controller
     {
         $query = User::query();
 
-        // Buscar por username o id (si tu tabla tiene id)
+        // Buscar por username, nombre o id_usuario
         if ($request->filled('q')) {
-            $q = $request->q;
+            $q = trim($request->q);
+
             $query->where(function ($sub) use ($q) {
-                $sub->where('username', 'like', "%$q%")
-                    ->orWhere('id', $q); // quítalo si tu tabla no tiene "id"
+                $sub->where('username', 'like', "%{$q}%")
+                    ->orWhere('nombre', 'like', "%{$q}%")
+                    ->orWhere('id_usuario', $q); // <- antes estaba 'id'
             });
         }
 
         // Filtrar por rol
         if ($request->filled('id_rol')) {
-            $query->where('id_rol', $request->id_rol);
+            $query->where('id_rol', (int) $request->id_rol);
         }
 
         // Filtrar por estado
         if ($request->filled('activo')) {
-            $query->where('activo', $request->activo);
+            // acepta true/false/1/0/"true"/"false"
+            $activo = filter_var($request->activo, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
+            if (!is_null($activo)) {
+                $query->where('activo', $activo);
+            }
         }
 
         return response()->json(
-            $query->orderBy('id', 'desc')->get()
+            $query->orderByDesc('id_usuario')->get() // <- antes estaba orderBy('id')
         );
     }
 
@@ -51,15 +57,18 @@ class UserController extends Controller
     public function storeAdmin(Request $request)
     {
         $request->validate([
+            'nombre' => 'required|string',
             'username' => 'required|string|unique:usuario,username',
             'password' => 'required|string|min:4',
             'activo' => 'required|boolean',
         ]);
 
         $user = User::create([
+            'nombre' => $request->nombre,
             'username' => $request->username,
             'password' => Hash::make($request->password),
             'id_rol' => 1,
+            'id_sucursal' => null,
             'activo' => $request->activo,
         ]);
 
@@ -75,15 +84,18 @@ class UserController extends Controller
     public function storeTecnico(Request $request)
     {
         $request->validate([
+            'nombre' => 'required|string',
             'username' => 'required|string|unique:usuario,username',
             'password' => 'required|string|min:4',
             'activo' => 'required|boolean',
         ]);
 
         $user = User::create([
+            'nombre' => $request->nombre,
             'username' => $request->username,
             'password' => Hash::make($request->password),
             'id_rol' => 2,
+            'id_sucursal' => null,
             'activo' => $request->activo,
         ]);
 
@@ -100,6 +112,7 @@ class UserController extends Controller
     {
         $request->validate([
             'id_sucursal' => 'required|integer|unique:sucursal,id_sucursal',
+            'nombre_sucursal' => 'required|string',
             'nombre' => 'required|string',
             'username' => 'required|string|unique:usuario,username',
             'password' => 'required|string|min:4',
@@ -108,14 +121,15 @@ class UserController extends Controller
 
         $result = DB::transaction(function () use ($request) {
 
-            //  Crear sucursal (ID manual)
+            // Crear sucursal (ID manual)
             $sucursal = Sucursal::create([
                 'id_sucursal' => $request->id_sucursal,
-                'nombre' => $request->nombre,
+                'nombre' => $request->nombre_sucursal,
             ]);
 
-            //  Crear usuario ligado a esa sucursal (misma PK)
+            // Crear usuario ligado a esa sucursal
             $user = User::create([
+                'nombre' => $request->nombre,
                 'username' => $request->username,
                 'password' => Hash::make($request->password),
                 'id_rol' => 3,
@@ -136,9 +150,9 @@ class UserController extends Controller
     /**
      * ACTIVAR / DESACTIVAR USUARIO
      */
-    public function cambiarEstado($id)
+    public function cambiarEstado($id_usuario)
     {
-        $user = User::findOrFail($id);
+        $user = User::findOrFail($id_usuario);
         $user->activo = !$user->activo;
         $user->save();
 
@@ -151,9 +165,9 @@ class UserController extends Controller
     /**
      * ELIMINAR USUARIO (solo si está inactivo)
      */
-    public function destroy($id)
+    public function destroy($id_usuario)
     {
-        $user = User::findOrFail($id);
+        $user = User::findOrFail($id_usuario);
 
         if ($user->activo) {
             return response()->json([
