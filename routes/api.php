@@ -3,7 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\TicketController;
-
+use App\Http\Controllers\UserController;
 
 Route::post('/login', [AuthController::class, 'login']);
 
@@ -37,6 +37,18 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Admin
     Route::middleware('role:admin')->group(function () {
+
+        // Tickets
         Route::post('/tickets/{id}/asignar', [TicketController::class, 'asignarTecnico']);
+
+        // ===== USUARIOS (panel admin) =====
+        Route::get('/usuarios', [UserController::class, 'index']);
+
+        Route::post('/usuarios/admin', [UserController::class, 'storeAdmin']);
+        Route::post('/usuarios/tecnico', [UserController::class, 'storeTecnico']);
+        Route::post('/usuarios/sucursal', [UserController::class, 'storeSucursal']);
+
+        Route::patch('/usuarios/{id}/estado', [UserController::class, 'cambiarEstado']);
+        Route::delete('/usuarios/{id}', [UserController::class, 'destroy']);
     });
 });
