@@ -21,35 +21,31 @@ class UserController extends Controller
     {
         $query = User::query();
 
-        // Buscar por username, nombre o id_usuario
+        // Buscar por username o id_usuario
         if ($request->filled('q')) {
-            $q = trim($request->q);
-
+            $q = $request->q;
             $query->where(function ($sub) use ($q) {
-                $sub->where('username', 'like', "%{$q}%")
-                    ->orWhere('nombre', 'like', "%{$q}%")
-                    ->orWhere('id_usuario', $q); // <- antes estaba 'id'
+                $sub->where('username', 'like', "%$q%")
+                    ->orWhere('id_usuario', $q);
             });
         }
 
         // Filtrar por rol
         if ($request->filled('id_rol')) {
-            $query->where('id_rol', (int) $request->id_rol);
+            $query->where('id_rol', $request->id_rol);
         }
 
         // Filtrar por estado
         if ($request->filled('activo')) {
-            // acepta true/false/1/0/"true"/"false"
-            $activo = filter_var($request->activo, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
-            if (!is_null($activo)) {
-                $query->where('activo', $activo);
-            }
+            $query->where('activo', $request->activo);
         }
 
+        //  ordenar por PK 
         return response()->json(
-            $query->orderByDesc('id_usuario')->get() // <- antes estaba orderBy('id')
+            $query->orderBy('id_usuario', 'desc')->get()
         );
     }
+
 
     /**
      * CREAR ADMIN

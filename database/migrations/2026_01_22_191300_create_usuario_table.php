@@ -11,7 +11,7 @@ return new class extends Migration
         Schema::create('usuario', function (Blueprint $table) {
             $table->bigIncrements('id_usuario');
 
-            $table->string('nombre', 120); // ✅ para mostrar en UI
+            $table->string('nombre', 120); //  para mostrar en UI
             $table->string('username', 80)->unique();
             $table->string('password');
 
@@ -22,7 +22,7 @@ return new class extends Migration
             $table->unsignedBigInteger('id_sucursal')->nullable();
             $table->foreign('id_sucursal')->references('id_sucursal')->on('sucursal');
 
-            $table->boolean('activo')->default(true); // ✅ activar/desactivar
+            $table->boolean('activo')->default(true); // activar/desactivar
         });
     }
 
