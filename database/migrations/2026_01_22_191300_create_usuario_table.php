@@ -18,7 +18,7 @@ return new class extends Migration
             $table->unsignedBigInteger('id_rol');
             $table->foreign('id_rol')->references('id_rol')->on('rol');
 
-            // ✅ nullable porque admin/tecnico no tienen sucursal
+            // nullable porque admin/tecnico no tienen sucursal
             $table->unsignedBigInteger('id_sucursal')->nullable();
             $table->foreign('id_sucursal')->references('id_sucursal')->on('sucursal');
 

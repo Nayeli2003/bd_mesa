@@ -74,7 +74,7 @@ class TicketController extends Controller
             return response()->json(['message' => 'No hay técnicos disponibles para asignación automática'], 422);
         }
 
-        // (Opcional) Si existe estado "En proceso", úsalo cuando se asigna
+        // (Opcional) Si existe estado "En proceso", se usa cuando se asigna
         $estadoProceso = DB::table('estado_ticket')
             ->whereRaw("LOWER(nombre) IN ('en proceso','proceso')")
             ->first();
