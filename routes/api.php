@@ -50,6 +50,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/usuarios/tecnico', [UserController::class, 'storeTecnico']);
         Route::post('/usuarios/sucursal', [UserController::class, 'storeSucursal']);
 
+        Route::put('/usuarios/{id_usuario}', [UserController::class, 'update']);
         Route::patch('/usuarios/{id}/estado', [UserController::class, 'cambiarEstado']);
         Route::delete('/usuarios/{id}', [UserController::class, 'destroy']);
     });

@@ -177,4 +177,34 @@ class UserController extends Controller
             'message' => 'Usuario eliminado correctamente'
         ]);
     }
+
+    /**
+     * EDITAR USUARIOS
+     */
+
+    public function update(Request $request, $id_usuario)
+    {
+        $user = User::findOrFail($id_usuario);
+
+        $data = $request->validate([
+            'nombre' => 'sometimes|required|string|max:255',
+            'username' => 'sometimes|required|string|max:255|unique:usuario,username,' . $id_usuario . ',id_usuario', //Esto es para no duplicar los usuarios
+            'id_rol' => 'sometimes|required|exists:rol,id_rol',
+            'id_sucursal' => 'nullable|exists:sucursal,id_sucursal',
+            'activo' => 'sometimes|required|boolean',
+            'password' => 'nullable|min:4'
+        ]);
+
+        // Si viene password, encriptarla
+        if (isset($data['password'])) {
+            $data['password'] = Hash::make($data['password']);
+        }
+
+        $user->update($data);
+
+        return response()->json([
+            'message' => 'Usuario actualizado correctamente',
+            'user' => $user
+        ]);
+    }
 }
