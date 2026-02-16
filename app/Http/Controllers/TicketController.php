@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class TicketController extends Controller
 {
@@ -277,5 +278,53 @@ class TicketController extends Controller
             ->first();
 
         return $tecnico; // { id_usuario, carga } o null depende
+    }
+
+    /**
+     * 6) Descargar memoria técnica PDF
+     * GET /tickets/{id}/pdf
+     */
+    public function descargarPdf(Request $request, $id)
+    {
+        $user = $request->user();
+        $rol = strtolower($user->rol?->nombre_rol ?? '');
+
+        // Solo admin y técnico
+        if (!in_array($rol, ['admin', 'tecnico'])) {
+            return response()->json(['message' => 'No autorizado'], 403);
+        }
+
+        $ticket = DB::table('ticket')
+            ->join('estado_ticket', 'ticket.id_estado', '=', 'estado_ticket.id_estado')
+            ->join('prioridad', 'ticket.id_prioridad', '=', 'prioridad.id_prioridad')
+            ->join('sucursal', 'ticket.id_sucursal', '=', 'sucursal.id_sucursal')
+            ->leftJoin('ticket_resuelto', 'ticket.id_ticket', '=', 'ticket_resuelto.id_ticket')
+            ->select(
+                'ticket.*',
+                'estado_ticket.nombre as estado',
+                'prioridad.nombre as prioridad',
+                'sucursal.nombre as sucursal',
+                'ticket_resuelto.solucion',
+                'ticket_resuelto.observaciones',
+                'ticket_resuelto.fecha_resolucion',
+                'ticket_resuelto.tiempo_resolucion_minutos'
+            )
+            ->where('ticket.id_ticket', $id)
+            ->first();
+
+        if (!$ticket) {
+            return response()->json(['message' => 'Ticket no encontrado'], 404);
+        }
+
+        // Solo permitir si está cerrado
+        if (strtolower($ticket->estado) !== 'cerrado') {
+            return response()->json(['message' => 'El ticket aún no está cerrado'], 422);
+        }
+
+        $pdf = Pdf::loadView('pdf.memoria_tecnica', [
+            'ticket' => $ticket
+        ]);
+
+        return $pdf->download("Memoria_Tecnica_{$ticket->id_ticket}.pdf");
     }
 }
