@@ -281,19 +281,21 @@ class TicketController extends Controller
     }
 
     /**
-     * 6) Descargar memoria técnica PDF
-     * GET /tickets/{id}/pdf
+     * 6) Descargar memoria técnica (PDF)
+     * - Solo admin y técnico
+     * - Solo si el ticket está cerrado
      */
-    public function descargarPdf(Request $request, $id)
+    public function descargarMemoria(Request $request, $id)
     {
         $user = $request->user();
         $rol = strtolower($user->rol?->nombre_rol ?? '');
 
-        // Solo admin y técnico
+        // Solo admin y técnico pueden descargar
         if (!in_array($rol, ['admin', 'tecnico'])) {
             return response()->json(['message' => 'No autorizado'], 403);
         }
 
+        // Buscar ticket con toda la información necesaria
         $ticket = DB::table('ticket')
             ->join('estado_ticket', 'ticket.id_estado', '=', 'estado_ticket.id_estado')
             ->join('prioridad', 'ticket.id_prioridad', '=', 'prioridad.id_prioridad')
@@ -306,7 +308,6 @@ class TicketController extends Controller
                 'sucursal.nombre as sucursal',
                 'ticket_resuelto.solucion',
                 'ticket_resuelto.observaciones',
-                'ticket_resuelto.fecha_resolucion',
                 'ticket_resuelto.tiempo_resolucion_minutos'
             )
             ->where('ticket.id_ticket', $id)
@@ -316,15 +317,16 @@ class TicketController extends Controller
             return response()->json(['message' => 'Ticket no encontrado'], 404);
         }
 
-        // Solo permitir si está cerrado
+        // Solo se puede generar si está cerrado
         if (strtolower($ticket->estado) !== 'cerrado') {
-            return response()->json(['message' => 'El ticket aún no está cerrado'], 422);
+            return response()->json([
+                'message' => 'La memoria técnica solo puede generarse cuando el ticket está cerrado'
+            ], 422);
         }
 
-        $pdf = Pdf::loadView('pdf.memoria_tecnica', [
-            'ticket' => $ticket
-        ]);
+        // Generar PDF
+        $pdf = Pdf::loadView('pdf.memoria_tecnica', compact('ticket'));
 
-        return $pdf->download("Memoria_Tecnica_{$ticket->id_ticket}.pdf");
+        return $pdf->download('Memoria_Tecnica_Ticket_' . $ticket->id_ticket . '.pdf');
     }
 }
