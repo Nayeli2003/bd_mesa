@@ -26,6 +26,9 @@ Route::middleware('auth:sanctum')->group(function () {
     // Tickets (todos autenticados)
     Route::get('/tickets', [TicketController::class, 'index']);
 
+    // Descargar PDF
+    Route::get('/tickets/{id}/memoria', [TicketController::class, 'descargarMemoria']);
+
     // Sucursal
     Route::middleware('role:sucursal')->group(function () {
         Route::post('/tickets', [TicketController::class, 'store']);
