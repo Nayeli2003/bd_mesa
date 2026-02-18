@@ -130,7 +130,6 @@
             <table>
                 <tr>
                     <td width="60%">
-                        <!-- Si usas DomPDF en Laravel -->
                         <img src="{{ public_path('images/logo.png') }}" style="height:60px; margin-bottom:10px;">
 
                         <div class="report-title">
