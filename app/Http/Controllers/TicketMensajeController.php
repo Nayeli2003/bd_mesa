@@ -1,9 +1,11 @@
 <?php
+
 namespace App\Http\Controllers;
 
 use App\Models\TicketMensaje;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use App\Models\Ticket;
 
 class TicketMensajeController extends Controller
 {
@@ -26,5 +28,14 @@ class TicketMensajeController extends Controller
             'id_usuario' => Auth::user()->id_usuario,
             'mensaje' => $request->mensaje,
         ]);
+    }
+
+    public function show($id)
+    {
+        $ticket = Ticket::with([
+            'mensajes.usuario'
+        ])->where('id_ticket', $id)->firstOrFail();
+
+        return response()->json($ticket);
     }
 }

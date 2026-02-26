@@ -29,6 +29,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/tickets/{id}/mensajes', [TicketMensajeController::class, 'index']);
     Route::post('/tickets/{id}/mensajes', [TicketMensajeController::class, 'store']);
 
+    Route::get('/tickets/{id}', [TicketController::class, 'show']);
+
 
     // Descargar PDF
     Route::get('/tickets/{id}/memoria', [TicketController::class, 'descargarMemoria']);
