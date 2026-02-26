@@ -52,43 +52,57 @@ class TicketController extends Controller
         $user = $request->user();
         $rol = strtolower($user->rol?->nombre_rol ?? '');
 
+        // Solo sucursal puede crear ticket
         if ($rol !== 'sucursal') {
             return response()->json(['message' => 'No autorizado (solo sucursal)'], 403);
         }
 
+        // Validamos solo lo que viene del frontend
         $request->validate([
             'titulo' => 'required|string|max:200',
             'descripcion' => 'required|string',
-            'id_prioridad' => 'required|integer|exists:prioridad,id_prioridad',
             'id_tipo_problema' => 'required|integer|exists:tipo_problema,id_tipo_problema',
         ]);
 
         // Buscar estado "Abierto"
-        $estadoAbierto = DB::table('estado_ticket')->where('nombre', 'Abierto')->first();
+        $estadoAbierto = DB::table('estado_ticket')
+            ->whereRaw("LOWER(nombre) = 'abierto'")
+            ->first();
+
+
         if (!$estadoAbierto) {
             return response()->json(['message' => 'Error: El estado "Abierto" no existe en la DB'], 500);
         }
 
-        // Técnico automático (menos carga de tickets activos)
+        // Selección automática de técnico
         $tecnico = $this->seleccionarTecnicoAutomatico();
+
         if (!$tecnico) {
-            return response()->json(['message' => 'No hay técnicos disponibles para asignación automática'], 422);
+            return response()->json(['message' => 'No hay técnicos disponibles'], 422);
         }
 
-        // (Opcional) Si existe estado "En proceso", se usa cuando se asigna
+        // Si existe estado "En proceso", se usa al asignar técnico
         $estadoProceso = DB::table('estado_ticket')
             ->whereRaw("LOWER(nombre) IN ('en proceso','proceso')")
             ->first();
 
-        $idEstadoInicial = $estadoProceso ? $estadoProceso->id_estado : $estadoAbierto->id_estado;
+        $idEstadoInicial = $estadoProceso
+            ? $estadoProceso->id_estado
+            : $estadoAbierto->id_estado;
 
+        //  Aquí calculamos la prioridad automáticamente
+        $idPrioridad = $this->calcularPrioridadAutomatica(
+            $request->id_tipo_problema
+        );
+
+        // Insertamos el ticket
         $idTicket = DB::table('ticket')->insertGetId([
-            'id_sucursal' => $user->id_sucursal,
+            'id_sucursal' => $user->id_sucursal, // Se toma del usuario autenticado
             'id_estado' => $idEstadoInicial,
-            'id_usuario' => $user->id_usuario,
-            'id_prioridad' => $request->id_prioridad,
+            'id_usuario' => $user->id_usuario,   // Quien creó el ticket
+            'id_prioridad' => $idPrioridad,      // Prioridad automática
             'id_tipo_problema' => $request->id_tipo_problema,
-            'id_tecnico' => $tecnico->id_usuario, // asignación automática
+            'id_tecnico' => $tecnico->id_usuario,
             'titulo' => $request->titulo,
             'descripcion' => $request->descripcion,
             'fecha_creacion' => now(),
@@ -132,7 +146,7 @@ class TicketController extends Controller
         }
 
         // Buscar estado "Cerrado"
-        $estadoCerrado = DB::table('estado_ticket')->where('nombre', 'Cerrado')->first();
+        $estadoCerrado = DB::table('estado_ticket')->whereRaw("LOWER(nombre) = 'cerrado'")->first();
         if (!$estadoCerrado) {
             return response()->json(['message' => 'Error: El estado "Cerrado" no existe en la DB'], 500);
         }
@@ -279,6 +293,39 @@ class TicketController extends Controller
 
         return $tecnico; // { id_usuario, carga } o null depende
     }
+
+    /**
+     * Calcula prioridad automáticamente según el tipo de problema
+     */
+    private function calcularPrioridadAutomatica($idTipoProblema)
+    {
+        $tipo = DB::table('tipo_problema')
+            ->where('id_tipo_problema', $idTipoProblema)
+            ->first();
+
+        if (!$tipo) {
+            return 3; // Baja por defecto
+        }
+
+        $nombre = strtolower($tipo->nombre);
+
+        // Alta prioridad
+        if (str_contains($nombre, 'falla de luz')) {
+            return 1;
+        }
+
+        // Media prioridad
+        if (
+            str_contains($nombre, 'error de conexión') ||
+            str_contains($nombre, 'falla telmex')
+        ) {
+            return 2;
+        }
+
+        // Baja prioridad por defecto
+        return 3;
+    }
+
 
     /**
      * 6) Descargar memoria técnica (PDF)

@@ -4,8 +4,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\TicketController;
 use App\Http\Controllers\UserController;
-
-
+use App\Http\Controllers\TicketMensajeController;
 
 Route::post('/login', [AuthController::class, 'login']);
 
@@ -19,12 +18,17 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
 
     // roles
-    Route::middleware('role:admin')->get('/admin', fn () => response()->json(['ok' => 'admin']));
-    Route::middleware('role:tecnico')->get('/tecnico', fn () => response()->json(['ok' => 'tecnico']));
-    Route::middleware('role:sucursal')->get('/sucursal', fn () => response()->json(['ok' => 'sucursal']));
+    Route::middleware('role:admin')->get('/admin', fn() => response()->json(['ok' => 'admin']));
+    Route::middleware('role:tecnico')->get('/tecnico', fn() => response()->json(['ok' => 'tecnico']));
+    Route::middleware('role:sucursal')->get('/sucursal', fn() => response()->json(['ok' => 'sucursal']));
 
     // Tickets (todos autenticados)
     Route::get('/tickets', [TicketController::class, 'index']);
+
+    // ===== MENSAJES (chat del ticket) =====
+    Route::get('/tickets/{id}/mensajes', [TicketMensajeController::class, 'index']);
+    Route::post('/tickets/{id}/mensajes', [TicketMensajeController::class, 'store']);
+
 
     // Descargar PDF
     Route::get('/tickets/{id}/memoria', [TicketController::class, 'descargarMemoria']);
