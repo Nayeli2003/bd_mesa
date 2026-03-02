@@ -27,6 +27,7 @@ class TicketMensajeController extends Controller
             'id_ticket' => $id,
             'id_usuario' => Auth::user()->id_usuario,
             'mensaje' => $request->mensaje,
+            'fecha_envio' => now(),
         ]);
     }
 
