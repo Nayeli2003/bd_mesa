@@ -16,18 +16,15 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
 
-        // ✅ CORS FORZADO (temporal para Flutter Web)
-        $middleware->append(ForceCors::class);
+        // CORS para permitir peticiones desde Flutter Web
+        $middleware->append(\Illuminate\Http\Middleware\HandleCors::class);
 
+        // Tus middlewares
         $middleware->alias([
             'role' => RoleMiddleware::class,
         ]);
+
     })
     ->withExceptions(function (Exceptions $exceptions): void {
-        $exceptions->render(function (AuthenticationException $e, $request) {
-            return response()->json([
-                'message' => 'No autenticado.'
-            ], 401);
-        });
     })
     ->create();
