@@ -57,11 +57,12 @@ class TicketController extends Controller
             return response()->json(['message' => 'No autorizado (solo sucursal)'], 403);
         }
 
-        // Validamos solo lo que viene del frontend
+        // Validación
         $request->validate([
             'titulo' => 'required|string|max:200',
             'descripcion' => 'required|string',
             'id_tipo_problema' => 'required|integer|exists:tipo_problema,id_tipo_problema',
+            'files.*' => 'nullable|file|mimes:jpg,jpeg,png,mp4,mov|max:20480'
         ]);
 
         // Buscar estado "Abierto"
@@ -69,9 +70,8 @@ class TicketController extends Controller
             ->whereRaw("LOWER(nombre) = 'abierto'")
             ->first();
 
-
         if (!$estadoAbierto) {
-            return response()->json(['message' => 'Error: El estado "Abierto" no existe en la DB'], 500);
+            return response()->json(['message' => 'Error: El estado "Abierto" no existe'], 500);
         }
 
         // Selección automática de técnico
@@ -81,7 +81,7 @@ class TicketController extends Controller
             return response()->json(['message' => 'No hay técnicos disponibles'], 422);
         }
 
-        // Si existe estado "En proceso", se usa al asignar técnico
+        // Estado inicial
         $estadoProceso = DB::table('estado_ticket')
             ->whereRaw("LOWER(nombre) IN ('en proceso','proceso')")
             ->first();
@@ -90,23 +90,38 @@ class TicketController extends Controller
             ? $estadoProceso->id_estado
             : $estadoAbierto->id_estado;
 
-        //  Aquí calculamos la prioridad automáticamente
+        // Prioridad automática
         $idPrioridad = $this->calcularPrioridadAutomatica(
             $request->id_tipo_problema
         );
 
-        // Insertamos el ticket
+        // Crear ticket
         $idTicket = DB::table('ticket')->insertGetId([
-            'id_sucursal' => $user->id_sucursal, // Se toma del usuario autenticado
+            'id_sucursal' => $user->id_sucursal,
             'id_estado' => $idEstadoInicial,
-            'id_usuario' => $user->id_usuario,   // Quien creó el ticket
-            'id_prioridad' => $idPrioridad,      // Prioridad automática
+            'id_usuario' => $user->id_usuario,
+            'id_prioridad' => $idPrioridad,
             'id_tipo_problema' => $request->id_tipo_problema,
             'id_tecnico' => $tecnico->id_usuario,
             'titulo' => $request->titulo,
             'descripcion' => $request->descripcion,
             'fecha_creacion' => now(),
         ], 'id_ticket');
+
+        // Guardar evidencias
+        if ($request->hasFile('files')) {
+
+            foreach ($request->file('files') as $file) {
+
+                $ruta = $file->store('tickets', 'public');
+
+                DB::table('ticket_evidencia')->insert([
+                    'id_ticket' => $idTicket,
+                    'ruta_archivo' => $ruta,
+                    'fecha_subida' => now()
+                ]);
+            }
+        }
 
         return response()->json([
             'message' => 'Ticket creado y asignado automáticamente',

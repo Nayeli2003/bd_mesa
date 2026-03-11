@@ -13,11 +13,17 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+
+        // CORS para permitir peticiones desde Flutter Web
+        $middleware->append(\Illuminate\Http\Middleware\HandleCors::class);
+
+        // Tus middlewares
         $middleware->alias([
             'role' => RoleMiddleware::class,
         ]);
+
     })
     ->withExceptions(function (Exceptions $exceptions): void {
-        
+
     })
     ->create();
