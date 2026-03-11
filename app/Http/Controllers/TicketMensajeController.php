@@ -9,10 +9,17 @@ use App\Models\Ticket;
 
 class TicketMensajeController extends Controller
 {
-    public function index($id)
+    /*public function index($id)
     {
         return TicketMensaje::where('id_ticket', $id)
             ->with('usuario')
+            ->orderBy('fecha_envio', 'asc')
+            ->get();
+    }*/
+
+    public function index($id)
+    {
+        return TicketMensaje::where('id_ticket', $id)
             ->orderBy('fecha_envio', 'asc')
             ->get();
     }

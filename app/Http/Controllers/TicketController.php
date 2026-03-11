@@ -376,4 +376,34 @@ class TicketController extends Controller
 
         return $pdf->download('Memoria_Tecnica_Ticket_' . $ticket->id_ticket . '.pdf');
     }
+
+    /**
+     * 7) Mostrar detalle de un ticket específico
+     */
+    public function show($id)
+    {
+        $ticket = DB::table('ticket')
+            ->join('estado_ticket', 'ticket.id_estado', '=', 'estado_ticket.id_estado')
+            ->join('prioridad', 'ticket.id_prioridad', '=', 'prioridad.id_prioridad')
+            ->join('sucursal', 'ticket.id_sucursal', '=', 'sucursal.id_sucursal')
+            ->leftJoin('tipo_problema', 'ticket.id_tipo_problema', '=', 'tipo_problema.id_tipo_problema')
+            ->select(
+                'ticket.*',
+                'estado_ticket.nombre as estado',
+                'prioridad.nombre as prioridad',
+                'prioridad.color as prioridad_color',
+                'sucursal.nombre as sucursal',
+                'tipo_problema.nombre as tipo_problema'
+            )
+            ->where('ticket.id_ticket', $id)
+            ->first();
+
+        if (!$ticket) {
+            return response()->json([
+                'message' => 'Ticket no encontrado'
+            ], 404);
+        }
+
+        return response()->json($ticket);
+    }
 }

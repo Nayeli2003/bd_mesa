@@ -8,6 +8,14 @@ use App\Http\Controllers\TicketMensajeController;
 
 Route::post('/login', [AuthController::class, 'login']);
 
+Route::options('/{any}', function () {
+    return response('', 204)
+        ->header('Access-Control-Allow-Origin', '*')
+        ->header('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS')
+        ->header('Access-Control-Allow-Headers', 'Origin, Content-Type, Accept, Authorization, X-Requested-With')
+        ->header('Access-Control-Max-Age', '86400');
+})->where('any', '.*');
+
 /**
  * se protege se requiere en token
  */
@@ -29,7 +37,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/tickets/{id}/mensajes', [TicketMensajeController::class, 'index']);
     Route::post('/tickets/{id}/mensajes', [TicketMensajeController::class, 'store']);
 
-    Route::get('/tickets/{id}', [TicketController::class, 'show']);
+    Route::get('/tickets/{id}', [TicketController::class, 'show']); //*probable error de ruta*
 
 
     // Descargar PDF
