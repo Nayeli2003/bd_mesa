@@ -19,6 +19,7 @@ return new class extends Migration
 
         $table->string('tipo', 50);     // ej: imagen, pdf, video, otro
         $table->string('nombre', 200);  // nombre del archivo o etiqueta
+        $table->string('ruta', 255);
         $table->timestamp('fecha')->useCurrent();
 
         $table->foreign('id_ticket')->references('id_ticket')->on('ticket')

@@ -52,6 +52,7 @@ class TicketController extends Controller
         $user = $request->user();
         $rol = strtolower($user->rol?->nombre_rol ?? '');
 
+
         // Solo sucursal puede crear ticket
         if ($rol !== 'sucursal') {
             return response()->json(['message' => 'No autorizado (solo sucursal)'], 403);
@@ -62,7 +63,7 @@ class TicketController extends Controller
             'titulo' => 'required|string|max:200',
             'descripcion' => 'required|string',
             'id_tipo_problema' => 'required|integer|exists:tipo_problema,id_tipo_problema',
-            'files.*' => 'nullable|file|mimes:jpg,jpeg,png,mp4,mov|max:20480'
+            'evidencias.*' => 'nullable|file|mimes:jpg,jpeg,png,mp4,mov|max:20480'
         ]);
 
         // Buscar estado "Abierto"
@@ -109,16 +110,18 @@ class TicketController extends Controller
         ], 'id_ticket');
 
         // Guardar evidencias
-        if ($request->hasFile('files')) {
+        if ($request->hasFile('evidencias')) {
 
-            foreach ($request->file('files') as $file) {
+            foreach ($request->file('evidencias') as $file) {
 
                 $ruta = $file->store('tickets', 'public');
 
                 DB::table('ticket_evidencia')->insert([
                     'id_ticket' => $idTicket,
-                    'ruta_archivo' => $ruta,
-                    'fecha_subida' => now()
+                    'id_usuario' => $user->id_usuario,
+                    'tipo' => $file->getClientMimeType(),
+                    'nombre' => $ruta,
+                    'fecha' => now()
                 ]);
             }
         }
@@ -399,7 +402,7 @@ class TicketController extends Controller
     /**
      * 7) Mostrar detalle de un ticket específico
      */
-   public function show(Request $request, $id)
+    public function show(Request $request, $id)
     {
         $user = $request->user();
         $rol = strtolower($user->rol?->nombre_rol ?? '');
@@ -435,7 +438,7 @@ class TicketController extends Controller
 
         //  CONVERTIR A URL
         $ticket->evidencias = collect($evidencias)->map(function ($e) {
-            $e->url = asset('storage/' . $e->ruta_archivo);
+            $e->url = asset('storage/' . $e->nombre);
             return $e;
         });
 
@@ -452,5 +455,4 @@ class TicketController extends Controller
             'message' => 'No autorizado'
         ], 403);
     }
-    
 }
