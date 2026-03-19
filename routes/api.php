@@ -6,8 +6,18 @@ use App\Http\Controllers\TicketController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\TicketMensajeController;
 
+/**
+ * =========================
+ * RUTA PÚBLICA
+ * =========================
+ */
 Route::post('/login', [AuthController::class, 'login']);
 
+/**
+ * =========================
+ * CORS (IMPORTANTE)
+ * =========================
+ */
 Route::options('/{any}', function () {
     return response('', 204)
         ->header('Access-Control-Allow-Origin', '*')
@@ -17,50 +27,87 @@ Route::options('/{any}', function () {
 })->where('any', '.*');
 
 /**
- * se protege se requiere en token
+ * =========================
+ * TODO PROTEGIDO POR TOKEN
+ * =========================
  */
 Route::middleware('auth:sanctum')->group(function () {
 
-    // Auth
+    /**
+     * =========================
+     * AUTH
+     * =========================
+     */
     Route::get('/me', [AuthController::class, 'me']);
     Route::post('/logout', [AuthController::class, 'logout']);
 
-    // roles
+    /**
+     * =========================
+     * TEST DE ROLES (OPCIONAL)
+     * =========================
+     */
     Route::middleware('role:admin')->get('/admin', fn() => response()->json(['ok' => 'admin']));
     Route::middleware('role:tecnico')->get('/tecnico', fn() => response()->json(['ok' => 'tecnico']));
     Route::middleware('role:sucursal')->get('/sucursal', fn() => response()->json(['ok' => 'sucursal']));
 
-    // Tickets (todos autenticados)
+    /**
+     * =========================
+     * TICKETS (COMPARTIDO)
+     * =========================
+     * TODOS los autenticados pueden ver detalle
+     * PERO el control REAL va en el Controller
+     */
     Route::get('/tickets', [TicketController::class, 'index']);
+    Route::get('/tickets/{id}', [TicketController::class, 'show']);
+    Route::get('/tickets/{id}/memoria', [TicketController::class, 'descargarMemoria']);
 
-    // ===== MENSAJES (chat del ticket) =====
+    /**
+     * =========================
+     * MENSAJES (CHAT)
+     * =========================
+     * técnico y sucursal usan esto
+     */
     Route::get('/tickets/{id}/mensajes', [TicketMensajeController::class, 'index']);
     Route::post('/tickets/{id}/mensajes', [TicketMensajeController::class, 'store']);
 
-    Route::get('/tickets/{id}', [TicketController::class, 'show']); //*probable error de ruta*
-
-
-    // Descargar PDF
-    Route::get('/tickets/{id}/memoria', [TicketController::class, 'descargarMemoria']);
-
-    // Sucursal
+    /**
+     * =========================
+     * SUCURSAL
+     * =========================
+     */
     Route::middleware('role:sucursal')->group(function () {
+
+        // Crear ticket (con imágenes)
         Route::post('/tickets', [TicketController::class, 'store']);
     });
 
-    // Técnico
+    /**
+     * =========================
+     * TÉCNICO
+     * =========================
+     */
     Route::middleware('role:tecnico')->group(function () {
+
+        // Solo ve los que le asignaron
         Route::get('/mis-tickets', [TicketController::class, 'misTickets']);
+
+        // Resolver ticket
         Route::post('/tickets/{id}/resolver', [TicketController::class, 'resolver']);
     });
 
-    // Admin
+    /**
+     * =========================
+     * ADMIN (FULL CONTROL)
+     * =========================
+     */
     Route::middleware('role:admin')->group(function () {
 
-        // Tickets
+        // Asignar técnico
         Route::post('/tickets/{id}/asignar', [TicketController::class, 'asignarTecnico']);
 
-        // ===== USUARIOS (panel admin) =====
+        /**
+         * USUARIOS
+         */
         Route::get('/usuarios', [UserController::class, 'index']);
 
         Route::post('/usuarios/admin', [UserController::class, 'storeAdmin']);

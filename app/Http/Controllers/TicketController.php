@@ -238,6 +238,10 @@ class TicketController extends Controller
             return response()->json(['message' => 'No autorizado (solo admin)'], 403);
         }
 
+        $request->merge([
+            'id_tecnico' => $request->id_tecnico
+        ]);
+
         $request->validate([
             'id_tecnico' => 'required|integer',
         ]);
@@ -395,8 +399,12 @@ class TicketController extends Controller
     /**
      * 7) Mostrar detalle de un ticket específico
      */
-    public function show($id)
+   public function show(Request $request, $id)
     {
+        $user = $request->user();
+        $rol = strtolower($user->rol?->nombre_rol ?? '');
+
+        // BUSCAR TICKET
         $ticket = DB::table('ticket')
             ->join('estado_ticket', 'ticket.id_estado', '=', 'estado_ticket.id_estado')
             ->join('prioridad', 'ticket.id_prioridad', '=', 'prioridad.id_prioridad')
@@ -413,12 +421,36 @@ class TicketController extends Controller
             ->where('ticket.id_ticket', $id)
             ->first();
 
+        // validar antes de usar
         if (!$ticket) {
             return response()->json([
                 'message' => 'Ticket no encontrado'
             ], 404);
         }
 
-        return response()->json($ticket);
+        //  TRAER EVIDENCIAS
+        $evidencias = DB::table('ticket_evidencia')
+            ->where('id_ticket', $id)
+            ->get();
+
+        //  CONVERTIR A URL
+        $ticket->evidencias = collect($evidencias)->map(function ($e) {
+            $e->url = asset('storage/' . $e->ruta_archivo);
+            return $e;
+        });
+
+        //  SEGURIDAD
+        if (
+            $rol === 'admin' ||
+            ($rol === 'tecnico' && (int)$ticket->id_tecnico === (int)$user->id_usuario) ||
+            ($rol === 'sucursal' && (int)$ticket->id_sucursal === (int)$user->id_sucursal)
+        ) {
+            return response()->json($ticket);
+        }
+
+        return response()->json([
+            'message' => 'No autorizado'
+        ], 403);
     }
+    
 }

@@ -18,7 +18,7 @@ return new class extends Migration
             $table->unsignedBigInteger('id_sucursal');
             $table->unsignedBigInteger('id_estado');
             $table->unsignedBigInteger('id_usuario');
-            $table->unsignedBigInteger('id_tecnico')->nullable(); // 🔥 NUEVO
+            $table->unsignedBigInteger('id_tecnico')->nullable(); 
             $table->unsignedBigInteger('id_prioridad');
             $table->unsignedBigInteger('id_tipo_problema');
 
