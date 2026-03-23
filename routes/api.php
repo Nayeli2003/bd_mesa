@@ -5,6 +5,7 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\TicketController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\TicketMensajeController;
+use App\Http\Controllers\TipoProblemaController;
 
 /**
  * =========================
@@ -117,5 +118,11 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::put('/usuarios/{id_usuario}', [UserController::class, 'update']);
         Route::patch('/usuarios/{id}/estado', [UserController::class, 'cambiarEstado']);
         Route::delete('/usuarios/{id}', [UserController::class, 'destroy']);
+
+        // ===== PROBLEMAS =====
+        Route::get('/tipo-problema', [TipoProblemaController::class, 'index']);
+        Route::post('/tipo-problema', [TipoProblemaController::class, 'store']);
+        Route::put('/tipo-problema/{id}', [TipoProblemaController::class, 'update']);
+        Route::delete('/tipo-problema/{id}', [TipoProblemaController::class, 'destroy']);
     });
 });
