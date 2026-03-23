@@ -109,19 +109,27 @@ class TicketController extends Controller
             'fecha_creacion' => now(),
         ], 'id_ticket');
 
+
+
+
         // Guardar evidencias
-        if ($request->hasFile('evidencias')) {
+        $files = $request->file('evidencias');
 
-            foreach ($request->file('evidencias') as $file) {
+        if ($files) {
+            foreach ((array)$files as $file) {
 
-                $ruta = $file->store('tickets', 'public');
+                if (!$file instanceof \Illuminate\Http\UploadedFile) {
+                    continue; // 👈 IGNORA basura
+                }
+
+                $path = $file->store('tickets', 'public');
 
                 DB::table('ticket_evidencia')->insert([
                     'id_ticket' => $idTicket,
                     'id_usuario' => $user->id_usuario,
-                    'tipo' => $file->getClientMimeType(),
-                    'nombre' => $ruta,
-                    'fecha' => now()
+                    'tipo' => $file->getMimeType(),
+                    'nombre' => $file->getClientOriginalName(),
+                    'ruta' => $path,
                 ]);
             }
         }
@@ -180,7 +188,7 @@ class TicketController extends Controller
                     'fecha_resolucion' => now(),
                     'solucion' => $request->solucion ?? 'Sin solución detallada',
                     'observaciones' => $request->observaciones,
-                    'tiempo_resolucion_minutos' => $minutos,
+                    'tiempo_resolucion' => gmdate("H:i:s", $minutos * 60),
                 ]
             );
         }
@@ -192,6 +200,22 @@ class TicketController extends Controller
         ]);
 
         return response()->json(['message' => 'Estado del ticket actualizado']);
+    }
+
+    /**
+     * cambiar el estado de los tickets
+     */
+    public function cambiarEstado(Request $request, $id)
+    {
+        $user = $request->user();
+
+        DB::table('ticket')
+            ->where('id_ticket', $id)
+            ->update([
+                'id_estado' => $request->id_estado
+            ]);
+
+        return response()->json(['message' => 'Estado actualizado']);
     }
 
     /**
@@ -438,10 +462,12 @@ class TicketController extends Controller
 
         //  CONVERTIR A URL
         $ticket->evidencias = collect($evidencias)->map(function ($e) {
-            $e->url = asset('storage/' . $e->nombre);
-            return $e;
+            return [
+                'type' => str_contains($e->tipo, 'image') ? 'image' : 'video',
+                'name' => $e->nombre,
+                'path' => asset('storage/' . $e->ruta),
+            ];
         });
-
         //  SEGURIDAD
         if (
             $rol === 'admin' ||
