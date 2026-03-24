@@ -257,6 +257,7 @@ class TicketController extends Controller
                 'tipo_problema.nombre as tipo_problema'
             )
             ->where('ticket.id_tecnico', $tecnico->id_usuario)
+            ->whereRaw("LOWER(estado_ticket.nombre) != 'cerrado'")
             ->orderByDesc('ticket.fecha_creacion')
             ->get();
 
@@ -492,5 +493,43 @@ class TicketController extends Controller
         return response()->json([
             'message' => 'No autorizado'
         ], 403);
+    }
+
+    public function ticketsCerrados(Request $request)
+    {
+        $user = $request->user();
+
+        if (!$user) {
+            return response()->json(['error' => 'No autenticado'], 401);
+        }
+
+        // 🔥 BUSCAR EL ID REAL DE "CERRADO"
+        $estadoCerrado = DB::table('estado_ticket')
+            ->whereRaw("LOWER(nombre) = 'cerrado'")
+            ->first();
+
+        if (!$estadoCerrado) {
+            return response()->json([
+                'error' => 'El estado cerrado no existe'
+            ], 500);
+        }
+
+        return DB::table('ticket')
+            ->join('estado_ticket', 'ticket.id_estado', '=', 'estado_ticket.id_estado')
+            ->join('prioridad', 'ticket.id_prioridad', '=', 'prioridad.id_prioridad')
+            ->join('sucursal', 'ticket.id_sucursal', '=', 'sucursal.id_sucursal')
+            ->leftJoin('tipo_problema', 'ticket.id_tipo_problema', '=', 'tipo_problema.id_tipo_problema')
+            ->select(
+                'ticket.*',
+                'estado_ticket.nombre as estado',
+                'prioridad.nombre as prioridad',
+                'prioridad.color as prioridad_color',
+                'sucursal.nombre as sucursal',
+                'tipo_problema.nombre as tipo_problema'
+            )
+            ->where('ticket.id_tecnico', $user->id_usuario)
+            ->where('ticket.id_estado', $estadoCerrado->id_estado) 
+            ->orderByDesc('ticket.fecha_creacion')
+            ->get();
     }
 }

@@ -94,6 +94,9 @@ Route::middleware('auth:sanctum')->group(function () {
 
         // Resolver ticket
         Route::post('/tickets/{id}/resolver', [TicketController::class, 'resolver']);
+
+        //Cerrar ticket
+        Route::get('/tickets/cerrados', [TicketController::class, 'ticketsCerrados']);
     });
 
     /**
