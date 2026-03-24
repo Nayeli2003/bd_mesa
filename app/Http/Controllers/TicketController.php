@@ -61,7 +61,7 @@ class TicketController extends Controller
         $request->validate([
             'titulo' => 'required|string|max:200',
             'descripcion' => 'required|string',
-            'id_tipo_problema' => 'required|integer|exists:tipo_problema,id_tipo_problema',
+            'id_tipo_problema' => 'required', //'id_tipo_problema' => 'required|integer|exists:tipo_problema,id_tipo_problema',
             'evidencias.*' => 'nullable|file|mimes:jpg,jpeg,png,mp4,mov|max:20480'
         ]);
 
@@ -140,12 +140,15 @@ class TicketController extends Controller
                     'id_tecnico' => (int)$tecnico->id_usuario
                 ], 201);
             });
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            // Si es un error de validación, deja que Laravel lo maneje normal (devolverá un 422 con los detalles)
+            throw $e;
         } catch (\Exception $e) {
-            // 6. MANEJO DE ERRORES
-            // Si algo falló arriba, la base de datos vuelve a su estado original (ROLLBACK)
+            // Si es un error de base de datos o de código, devuelve el 500
             return response()->json([
-                'message' => 'Error al procesar el ticket',
-                'error' => $e->getMessage()
+                'message' => 'Error interno en el servidor',
+                'error' => $e->getMessage(),
+                'line' => $e->getLine() // Esto te dirá en qué línea falló exactamente
             ], 500);
         }
     }
