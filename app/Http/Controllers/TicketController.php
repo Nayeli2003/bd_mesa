@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Support\Facades\Storage;
 
 class TicketController extends Controller
 {
@@ -41,7 +42,27 @@ class TicketController extends Controller
             $q->where('ticket.id_sucursal', $user->id_sucursal);
         }
 
-        return $q->get();
+        $tickets = $q->get()->map(function ($t) {
+
+            $fechaCreacion = \Carbon\Carbon::parse($t->fecha_creacion);
+            $ahora = now();
+
+            $minutos = $fechaCreacion->diffInMinutes($ahora);
+
+            // SLA por prioridad
+            $limite = match (strtolower($t->prioridad)) {
+                'alta' => 120,
+                'media' => 240,
+                'baja' => 480,
+                default => 480,
+            };
+
+            $t->sla_cumple = $minutos <= $limite;
+
+            return $t;
+        });
+
+        return $tickets;
     }
 
     /**
@@ -193,6 +214,7 @@ class TicketController extends Controller
 
         // Si el técnico eligió "Cerrado", guardamos resolución
         if ((int)$request->id_estado === (int)$estadoCerrado->id_estado) {
+
             $minutos = now()->diffInMinutes(Carbon::parse($ticket->fecha_creacion));
 
             DB::table('ticket_resuelto')->updateOrInsert(
@@ -203,6 +225,43 @@ class TicketController extends Controller
                     'solucion' => $request->solucion ?? 'Sin solución detallada',
                     'observaciones' => $request->observaciones,
                     'tiempo_resolucion' => gmdate("H:i:s", $minutos * 60),
+                ]
+            );
+
+            // GENERAR PDF Y GUARDAR
+            $ticketData = DB::table('ticket')
+                ->join('estado_ticket', 'ticket.id_estado', '=', 'estado_ticket.id_estado')
+                ->join('prioridad', 'ticket.id_prioridad', '=', 'prioridad.id_prioridad')
+                ->join('sucursal', 'ticket.id_sucursal', '=', 'sucursal.id_sucursal')
+                ->leftJoin('ticket_resuelto', 'ticket.id_ticket', '=', 'ticket_resuelto.id_ticket')
+                ->select(
+                    'ticket.*',
+                    'estado_ticket.nombre as estado',
+                    'prioridad.nombre as prioridad',
+                    'sucursal.nombre as sucursal',
+                    'ticket_resuelto.solucion',
+                    'ticket_resuelto.observaciones',
+                    'ticket_resuelto.tiempo_resolucion as tiempo_resolucion'
+                )
+                ->where('ticket.id_ticket', $id)
+                ->first();
+
+            $pdf = Pdf::loadView('pdf.memoria_tecnica', [
+                'ticket' => $ticketData
+            ]);
+
+
+            $fileName = 'memoria_ticket_' . $id . '.pdf';
+            $path = 'memorias/' . $fileName;
+
+            Storage::disk('public')->put($path, $pdf->output());
+
+            // GUARDAR EN BD
+            DB::table('ticket_memorias')->updateOrInsert(
+                ['id_ticket' => $id],
+                [
+                    'pdf_url' => $path,
+                    'fecha_creacion' => now()
                 ]
             );
         }
@@ -416,7 +475,7 @@ class TicketController extends Controller
                 'sucursal.nombre as sucursal',
                 'ticket_resuelto.solucion',
                 'ticket_resuelto.observaciones',
-                'ticket_resuelto.tiempo_resolucion_minutos'
+                'ticket_resuelto.tiempo_resolucion as tiempo_resolucion'
             )
             ->where('ticket.id_ticket', $id)
             ->first();

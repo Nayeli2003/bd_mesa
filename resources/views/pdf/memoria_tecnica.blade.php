@@ -170,7 +170,7 @@
                 <td class="summary-label">Estado Final</td>
                 <td>Cerrado</td>
                 <td class="summary-label">Tiempo resolución</td>
-                <td>{{ $ticket->tiempo_resolucion_minutos ?? 0 }} minutos</td>
+                <td>{{ $ticket->tiempo_resolucion ?? '00:00:00' }} minutos</td>
             </tr>
             <tr>
                 <td class="summary-label">Técnico responsable</td>

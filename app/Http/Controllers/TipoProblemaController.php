@@ -43,24 +43,39 @@ class TipoProblemaController extends Controller
     }
 
     // EDITAR
-    public function update(Request $request, $id)
-    {
-        $request->validate([
-        'nombre' => 'required',
-        'descripcion' => 'required',
-        'id_prioridad' => 'required|exists:prioridad,id_prioridad'
-    ]);
-        DB::table('tipo_problema')
-            ->where('id_tipo_problema', $id)
-            ->update([
-                'nombre' => $request->nombre,
-                'descripcion' => $request->descripcion,
-                'id_prioridad' => $request->id_prioridad, 
-                'updated_at' => now(),
-            ]);
+    // EDITAR
+public function update(Request $request, $id)
+{
+    $data = $request->json()->all();
 
-        return response()->json(['message' => 'Actualizado']);
+    if (!isset($data['prioridad'])) {
+        return response()->json([
+            'error' => 'Prioridad requerida'
+        ], 422);
     }
+
+    $nombre = trim(ucfirst(strtolower($data['prioridad'])));
+
+    $prioridad = DB::table('prioridad')
+        ->where('nombre', $nombre)
+        ->first();
+
+    if (!$prioridad) {
+        return response()->json([
+            'error' => 'Prioridad no encontrada'
+        ], 422);
+    }
+
+    DB::table('tipo_problema')
+        ->where('id_tipo_problema', $id)
+        ->update([
+            'id_prioridad' => $prioridad->id_prioridad
+        ]);
+
+    return response()->json([
+        'message' => 'Actualizado correctamente'
+    ]);
+}
 
     // ELIMINAR 
 
