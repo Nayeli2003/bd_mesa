@@ -24,13 +24,15 @@ class TicketController extends Controller
             ->join('prioridad', 'ticket.id_prioridad', '=', 'prioridad.id_prioridad')
             ->join('sucursal', 'ticket.id_sucursal', '=', 'sucursal.id_sucursal')
             ->leftJoin('tipo_problema', 'ticket.id_tipo_problema', '=', 'tipo_problema.id_tipo_problema')
+            ->leftJoin('usuario as tecnico', 'ticket.id_tecnico', '=', 'tecnico.id_usuario')
             ->select(
                 'ticket.*',
                 'estado_ticket.nombre as estado',
                 'prioridad.nombre as prioridad',
                 'prioridad.color as prioridad_color',
                 'sucursal.nombre as sucursal',
-                'tipo_problema.nombre as tipo_problema'
+                'tipo_problema.nombre as tipo_problema',
+                'tecnico.nombre as tecnico'
             )
             ->orderByDesc('ticket.fecha_creacion');
 

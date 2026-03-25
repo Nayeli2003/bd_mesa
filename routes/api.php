@@ -110,6 +110,8 @@ Route::middleware('auth:sanctum')->group(function () {
         // Asignar técnico
         Route::post('/tickets/{id}/asignar', [TicketController::class, 'asignarTecnico']);
 
+        Route::patch('/tickets/{id}/estado', [TicketController::class, 'cambiarEstado']);
+
         /**
          * USUARIOS
          */
