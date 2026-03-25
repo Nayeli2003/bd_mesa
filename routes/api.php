@@ -58,6 +58,7 @@ Route::middleware('auth:sanctum')->group(function () {
      * TODOS los autenticados pueden ver detalle
      * PERO el control REAL va en el Controller
      */
+    Route::get('/tickets/cerrados', [TicketController::class, 'ticketsCerrados']);
     Route::get('/tickets', [TicketController::class, 'index']);
     Route::get('/tickets/{id}', [TicketController::class, 'show']);
     Route::get('/tickets/{id}/memoria', [TicketController::class, 'descargarMemoria']);
@@ -96,7 +97,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/tickets/{id}/resolver', [TicketController::class, 'resolver']);
 
         //Cerrar ticket
-        Route::get('/tickets/cerrados', [TicketController::class, 'ticketsCerrados']);
+       // Route::get('/tickets/cerrados', [TicketController::class, 'ticketsCerrados']);
     });
 
     /**

@@ -503,17 +503,6 @@ class TicketController extends Controller
             return response()->json(['error' => 'No autenticado'], 401);
         }
 
-        // 🔥 BUSCAR EL ID REAL DE "CERRADO"
-        $estadoCerrado = DB::table('estado_ticket')
-            ->whereRaw("LOWER(nombre) = 'cerrado'")
-            ->first();
-
-        if (!$estadoCerrado) {
-            return response()->json([
-                'error' => 'El estado cerrado no existe'
-            ], 500);
-        }
-
         return DB::table('ticket')
             ->join('estado_ticket', 'ticket.id_estado', '=', 'estado_ticket.id_estado')
             ->join('prioridad', 'ticket.id_prioridad', '=', 'prioridad.id_prioridad')
@@ -527,8 +516,8 @@ class TicketController extends Controller
                 'sucursal.nombre as sucursal',
                 'tipo_problema.nombre as tipo_problema'
             )
-            ->where('ticket.id_tecnico', $user->id_usuario)
-            ->where('ticket.id_estado', $estadoCerrado->id_estado) 
+            ->where('ticket.id_tecnico', $user->id_usuario) // 🔥 importante
+            ->whereRaw('LOWER(estado_ticket.nombre) = ?', ['cerrado']) // 🔥 clave
             ->orderByDesc('ticket.fecha_creacion')
             ->get();
     }
