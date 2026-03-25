@@ -26,12 +26,13 @@ class TipoProblemaController extends Controller
     {
         $request->validate([
             'nombre' => 'required',
+            'descripcion' => 'required',
             'id_prioridad' => 'required|exists:prioridad,id_prioridad'
         ]);
 
         $id = DB::table('tipo_problema')->insertGetId([
             'nombre' => $request->nombre,
-            'descripcion' => $request->descripcion ?? '',
+            'descripcion' => $request->descripcion,
             'id_prioridad' => $request->id_prioridad, 
             'activo' => true,
             'created_at' => now(),
@@ -44,11 +45,16 @@ class TipoProblemaController extends Controller
     // EDITAR
     public function update(Request $request, $id)
     {
+        $request->validate([
+        'nombre' => 'required',
+        'descripcion' => 'required',
+        'id_prioridad' => 'required|exists:prioridad,id_prioridad'
+    ]);
         DB::table('tipo_problema')
             ->where('id_tipo_problema', $id)
             ->update([
                 'nombre' => $request->nombre,
-                'descripcion' => $request->descripcion ?? '',
+                'descripcion' => $request->descripcion,
                 'id_prioridad' => $request->id_prioridad, 
                 'updated_at' => now(),
             ]);
@@ -63,6 +69,9 @@ class TipoProblemaController extends Controller
         $problema = DB::table('tipo_problema')
             ->where('id_tipo_problema', $id)
             ->first();
+            if (!$problema) {
+    return response()->json(['error' => 'No encontrado'], 404);
+}
 
         DB::table('tipo_problema')
             ->where('id_tipo_problema', $id)
@@ -76,10 +85,17 @@ class TipoProblemaController extends Controller
     // ELIMINAR
     public function destroy($id)
     {
-        DB::table('tipo_problema')
-            ->where('id_tipo_problema', $id)
-            ->delete();
+        $existe = DB::table('tipo_problema')
+    ->where('id_tipo_problema', $id)
+    ->exists();
 
+if (!$existe) {
+    return response()->json(['error' => 'No encontrado'], 404);
+}
+
+DB::table('tipo_problema')
+    ->where('id_tipo_problema', $id)
+    ->delete();
         return response()->json(['message' => 'Eliminado']);
     }
 }
