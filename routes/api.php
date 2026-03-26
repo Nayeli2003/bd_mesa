@@ -6,7 +6,6 @@ use App\Http\Controllers\TicketController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\TicketMensajeController;
 use App\Http\Controllers\TipoProblemaController;
-use App\Http\Controllers\TareaController;
 
 /**
  * =========================
@@ -99,12 +98,6 @@ Route::middleware('auth:sanctum')->group(function () {
 
         // Resolver ticket
         Route::post('/tickets/{id}/resolver', [TicketController::class, 'resolver']);
-<<<<<<< Updated upstream
-
-        //Cerrar ticket
-        // Route::get('/tickets/cerrados', [TicketController::class, 'ticketsCerrados']);
-=======
->>>>>>> Stashed changes
     });
 
     /**
@@ -131,9 +124,6 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::put('/usuarios/{id_usuario}', [UserController::class, 'update']);
         Route::patch('/usuarios/{id}/estado', [UserController::class, 'cambiarEstado']);
         Route::delete('/usuarios/{id}', [UserController::class, 'destroy']);
-
-        // ===== TAREAS =====
-        Route::post('/tareas', [TareaController::class, 'store']);
 
         // ===== PROBLEMAS =====
         Route::post('/tipo-problema', [TipoProblemaController::class, 'store']);
