@@ -15,6 +15,9 @@ use App\Http\Controllers\TareaController;
  */
 Route::post('/login', [AuthController::class, 'login']);
 
+// 🔥 ESTA RUTA DEBE SER PÚBLICA (IMPORTANTE PARA FLUTTER)
+Route::get('/tipo-problema', [TipoProblemaController::class, 'index']);
+
 /**
  * =========================
  * CORS (IMPORTANTE)
@@ -96,9 +99,12 @@ Route::middleware('auth:sanctum')->group(function () {
 
         // Resolver ticket
         Route::post('/tickets/{id}/resolver', [TicketController::class, 'resolver']);
+<<<<<<< Updated upstream
 
         //Cerrar ticket
         // Route::get('/tickets/cerrados', [TicketController::class, 'ticketsCerrados']);
+=======
+>>>>>>> Stashed changes
     });
 
     /**
@@ -130,7 +136,6 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/tareas', [TareaController::class, 'store']);
 
         // ===== PROBLEMAS =====
-        Route::get('/tipo-problema', [TipoProblemaController::class, 'index']);
         Route::post('/tipo-problema', [TipoProblemaController::class, 'store']);
         Route::put('/tipo-problema/{id}', [TipoProblemaController::class, 'update']);
         Route::delete('/tipo-problema/{id}', [TipoProblemaController::class, 'destroy']);

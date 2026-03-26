@@ -31,13 +31,11 @@ class TipoProblemaController extends Controller
         ]);
 
         $id = DB::table('tipo_problema')->insertGetId([
-            'nombre' => $request->nombre,
-            'descripcion' => $request->descripcion,
-            'id_prioridad' => $request->id_prioridad, 
-            'activo' => true,
-            'created_at' => now(),
-            'updated_at' => now(),
-        ]);
+    'nombre' => $request->nombre,
+    'descripcion' => $request->descripcion,
+    'id_prioridad' => $request->id_prioridad,
+    'activo' => true,
+], 'id_tipo_problema');
 
         return response()->json(['id' => $id], 201);
     }
