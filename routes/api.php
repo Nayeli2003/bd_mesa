@@ -6,6 +6,7 @@ use App\Http\Controllers\TicketController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\TicketMensajeController;
 use App\Http\Controllers\TipoProblemaController;
+use App\Http\Controllers\TareaController;
 
 /**
  * =========================
@@ -17,6 +18,8 @@ Route::post('/login', [AuthController::class, 'login']);
 // 🔥 ESTA RUTA DEBE SER PÚBLICA (IMPORTANTE PARA FLUTTER)
 Route::get('/tipo-problema', [TipoProblemaController::class, 'index']);
 
+
+Route::get('/tareas/{id}/memoria', [TareaController::class, 'descargarMemoria']);
 /**
  * =========================
  * CORS (IMPORTANTE)
@@ -43,6 +46,23 @@ Route::middleware('auth:sanctum')->group(function () {
      * =========================
      */
     Route::get('/me', [AuthController::class, 'me']);
+
+    // NUEVAS RUTAS PARA TAREAS
+    Route::get('/tecnicos', [TareaController::class, 'tecnicos']);
+    Route::get('/sucursales', [TareaController::class, 'sucursales']);
+    Route::post('/tareas', [TareaController::class, 'store']);
+    Route::post('/tareas/{id}/finalizar', [TareaController::class, 'finalizar']);
+    Route::get('/mis-tareas', [TareaController::class, 'misTareas']);
+    Route::post('/tareas/{id}/reabrir', [TareaController::class, 'reabrir']);
+    Route::get('/tareas', [TareaController::class, 'todas']);
+    Route::put('/tareas/{id}', [TareaController::class, 'actualizar']);
+
+    /**
+     * =========================
+     * logout
+     * =========================
+     */
+
     Route::post('/logout', [AuthController::class, 'logout']);
 
     /**
