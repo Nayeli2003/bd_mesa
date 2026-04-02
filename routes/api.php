@@ -33,6 +33,25 @@ Route::options('/{any}', function () {
         ->header('Access-Control-Max-Age', '86400');
 })->where('any', '.*');
 
+
+// 🔥 SERVIR ARCHIVOS (IMÁGENES / VIDEOS)
+Route::get('/archivo/{path}', function ($path) {
+
+    $fullPath = storage_path('app/public/' . $path);
+
+    if (!file_exists($fullPath)) {
+        return response()->json([
+            'error' => 'Archivo no encontrado',
+            'path' => $fullPath
+        ], 404);
+    }
+
+    return response()->file($fullPath, [
+        'Access-Control-Allow-Origin' => '*',
+        'Content-Type' => mime_content_type($fullPath)
+    ]);
+})->where('path', '.*');
+
 /**
  * =========================
  * TODO PROTEGIDO POR TOKEN

@@ -6,6 +6,7 @@ use App\Models\TicketMensaje;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Models\Ticket;
+use Illuminate\Support\Facades\Log;
 
 class TicketMensajeController extends Controller
 {
@@ -28,10 +29,17 @@ class TicketMensajeController extends Controller
         try {
 
             $request->validate([
-                'mensaje' => 'nullable|string'
+                'mensaje' => 'nullable|string',
+                'archivo' => 'nullable|file|mimes:jpg,jpeg,png,mp4,mov|max:20480'
             ]);
 
             $path = null;
+
+            if (!$request->hasFile('archivo')) {
+                Log::info("NO LLEGA ARCHIVO");
+            } else {
+                Log::info("SI LLEGA ARCHIVO");
+            }
 
             $file = $request->file('archivo');
 
