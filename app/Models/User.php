@@ -57,4 +57,6 @@ class User extends Authenticatable
     {
         return $this->belongsTo(Sucursal::class, 'id_sucursal', 'id_sucursal');
     }
+
+    
 }

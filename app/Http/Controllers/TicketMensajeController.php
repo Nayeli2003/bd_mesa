@@ -9,35 +9,62 @@ use App\Models\Ticket;
 
 class TicketMensajeController extends Controller
 {
-    /*public function index($id)
-    {
-        return TicketMensaje::where('id_ticket', $id)
-            ->with('usuario')
-            ->orderBy('fecha_envio', 'asc')
-            ->get();
-    }*/
-
+    // ========================
+    // LISTAR MENSAJES
+    // ========================
     public function index($id)
     {
-        return TicketMensaje::where('id_ticket', $id)
+        return TicketMensaje::with('usuario') // 👈 ESTA ES LA CLAVE
+            ->where('id_ticket', $id)
             ->orderBy('fecha_envio', 'asc')
             ->get();
     }
 
+    // ========================
+    // GUARDAR MENSAJE + ARCHIVO
+    // ========================
     public function store(Request $request, $id)
     {
-        $request->validate([
-            'mensaje' => 'required|string'
-        ]);
+        try {
 
-        return TicketMensaje::create([
-            'id_ticket' => $id,
-            'id_usuario' => Auth::user()->id_usuario,
-            'mensaje' => $request->mensaje,
-            'fecha_envio' => now(),
-        ]);
+            $request->validate([
+                'mensaje' => 'nullable|string'
+            ]);
+
+            $path = null;
+
+            $file = $request->file('archivo');
+
+            if ($file) {
+                $path = $file->store('tickets', 'public');
+            }
+
+            // 🚨 VALIDACIÓN CLAVE
+            if (!$request->mensaje && !$path) {
+                return response()->json([
+                    'error' => 'Debes enviar mensaje o archivo'
+                ], 400);
+            }
+
+            return TicketMensaje::create([
+                'id_ticket' => $id,
+                'id_usuario' => Auth::user()->id_usuario,
+                'mensaje' => $request->mensaje,
+                'archivo' => $path,
+                'fecha_envio' => now(),
+            ]);
+        } catch (\Throwable $e) {
+
+            return response()->json([
+                'error_real' => $e->getMessage(),
+                'linea' => $e->getLine()
+            ], 500);
+        }
     }
 
+    // ========================
+    // DETALLE CON MENSAJES
+    // ========================
     public function show($id)
     {
         $ticket = Ticket::with([
