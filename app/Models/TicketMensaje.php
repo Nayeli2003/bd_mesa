@@ -14,12 +14,13 @@ class TicketMensaje extends Model
     protected $with = [];
 
     protected $fillable = [
-        'id_ticket',
-        'id_usuario',
-        'mensaje',
-        'fecha_envio',
-        'leido',
-    ];
+    'id_ticket',
+    'id_usuario',
+    'mensaje',
+    'archivo', 
+    'fecha_envio',
+    'leido',
+];
 
     public function ticket()
     {

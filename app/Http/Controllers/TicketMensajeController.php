@@ -57,7 +57,7 @@ class TicketMensajeController extends Controller
             return TicketMensaje::create([
                 'id_ticket' => $id,
                 'id_usuario' => Auth::user()->id_usuario,
-                'mensaje' => $request->mensaje,
+                'mensaje' => $request->mensaje ?: '',
                 'archivo' => $path,
                 'fecha_envio' => now(),
             ]);
